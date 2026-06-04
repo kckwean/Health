@@ -251,7 +251,7 @@
   <button class="add-btn" id="addBtn">＋ 운동 항목 추가</button>
 
   <div style="text-align:center;color:var(--muted);font-size:.68rem;margin-top:20px;letter-spacing:.3px;">
-    My Health Routine · build 2026-06-04 (save v3)
+    My Health Routine · build 2026-06-04 (save v4)
   </div>
 
 </div>
@@ -300,7 +300,7 @@
 <div class="overlay" id="dlgOverlay">
   <div class="modal" style="max-width:440px;">
     <h3 id="dlgTitle">알림</h3>
-    <p id="dlgMsg" style="color:var(--muted);font-size:.92rem;margin:-4px 0 14px;line-height:1.5;"></p>
+    <p id="dlgMsg" style="color:var(--muted);font-size:.92rem;margin:-4px 0 14px;line-height:1.5;white-space:pre-wrap;"></p>
     <div class="field" id="dlgInputWrap" style="display:none;">
       <input type="text" id="dlgInput" autocomplete="off">
     </div>
@@ -583,10 +583,22 @@
   function doExport(){
     if(T.running) return;
     var json=exportJson(), fname=exportFilename();
-    if(shareFile(json)) return;                                   // 1) mobile share sheet (call sync, keeps user-activation)
-    if(window.showSaveFilePicker){ saveViaPicker(json, fname); return; }   // 2) real "Save As" (Chrome/Edge desktop, Android Chrome)
-    if(downloadFile(json, fname)) return;                          // 3) classic download (other desktop browsers)
-    appAlert("저장 안 됨", "이 브라우저는 파일 저장/공유를 지원하지 않습니다. 다른 브라우저(예: Chrome)로 열거나, 사용 중인 기기·브라우저를 알려주시면 맞는 방법을 안내하겠습니다.");
+    if(shareFile(json)) return;                                    // 1) mobile share sheet (real browsers)
+    if(window.showSaveFilePicker){                                 // 2) real "Save As" (desktop Chromium)
+      saveViaPicker(json, fname).then(function(ok){ if(!ok) downloadThenNotify(json, fname); });
+      return;
+    }
+    downloadThenNotify(json, fname);                               // 3) download + explicit feedback
+  }
+  function downloadThenNotify(json, fname){
+    var ok = downloadFile(json, fname);
+    if(ok){
+      appAlert("저장 시도됨",
+        "‘다운로드’ 폴더에 "+fname+" 가 생겼는지 확인하세요.\n\n만약 아무 반응이 없다면, 지금 화면이 카카오톡·네이버 등 ‘앱 내부 브라우저’일 가능성이 큽니다. 그 경우 우측 상단 ⋮ 메뉴에서 ‘다른 브라우저로 열기’ 또는 ‘Chrome으로 열기’를 선택해 다시 시도하세요.");
+    }else{
+      appAlert("저장 안 됨",
+        "이 브라우저에서는 저장이 지원되지 않습니다. 주소를 복사해 Chrome 같은 기본 브라우저에서 열어 다시 시도하세요.");
+    }
   }
 
   // parse a loaded JSON file and merge routines
